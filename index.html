@@ -448,5 +448,15 @@
         <!-- * * Activate your form at https://startbootstrap.com/solution/contact-forms * *-->
         <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
         <script src="https://cdn.startbootstrap.com/sb-forms-latest.js"></script>
+        <script>gtag('event', 'add_to_cart', {
+                currency: 'EUR',
+                items: [{
+                    item_id: response.product.referencia,
+                    item_name: response.product.descripcion,
+                    quantity: response.qty,
+                    price: response.unit_price,
+                    index: response.detail_id
+                }]
+            });</script>
     </body>
 </html>
