@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Estudiar</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2rem; }
+    button { padding: 1rem; font-size: 1rem; margin-top: 1rem; }
+    #respuesta, #resultado { margin-top: 1.5rem; font-size: 1.2rem; }
+  </style>
+</head>
+<body>
+  <h1>🧠 Estudiar</h1>
+  <div id="pregunta">Cargando pregunta...</div>
+  <button onclick="escuchar()">🎤 Responder</button>
+  <div id="respuesta"></div>
+  <div id="resultado"></div>
+
+  <script>
+    let preguntaActual = "";
+
+    async function cargarPregunta() {
+      const res = await fetch("https://TU_BACKEND.com/pregunta");
+      const data = await res.json();
+      preguntaActual = data.pregunta;
+      document.getElementById("pregunta").innerText = preguntaActual;
+      hablar(preguntaActual);
+    }
+
+    function escuchar() {
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.interimResults = false;
+
+      recognition.onresult = async function(event) {
+        const texto = event.results[0][0].transcript;
+        document.getElementById("respuesta").innerText = "Tú: " + texto;
+        const res = await fetch("https://TU_BACKEND.com/evaluar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pregunta: preguntaActual,
+            respuesta: texto
+          })
+        });
+        const data = await res.json();
+        document.getElementById("resultado").innerText = data.evaluacion;
+        hablar(data.evaluacion);
+      };
+
+      recognition.start();
+    }
+
+    function hablar(texto) {
+      const synth = window.speechSynthesis;
+      const utter = new SpeechSynthesisUtterance(texto);
+      utter.lang = 'es-ES';
+      synth.speak(utter);
+    }
+
+    cargarPregunta();
+  </script>
+</body>
+</html>
