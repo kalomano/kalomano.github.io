@@ -43,17 +43,39 @@
   <button onclick="comenzarConversacion()">Comenzar</button>
 
   <div class="chat" id="chat"></div>
+<script>
+  let API_KEY = ""; // ⛔ Sustituye esto por tu clave real
 
-  <script>
-    const preguntas = [
-      "¿Qué es la fotosíntesis?",
-      "¿Quién escribió Don Quijote?",
-      "¿Cuál es la capital de Francia?",
-      "¿Qué es una variable en programación?",
-      "¿Cuántos planetas hay en el sistema solar?"
-    ];
+  window.addEventListener("DOMContentLoaded", () => {
+    API_KEY = prompt("Introduce tu API key de OpenRouter:");
+    if (!API_KEY) {
+      alert("⚠️ Necesitas introducir una API key para usar esta app.");
+    }
+  });
 
-    let indicePregunta = 0;
+    let preguntas = [];
+    let respuestas = [];
+    
+    fetch("assets/preguntasRespuestas.json")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("No se pudo cargar el archivo JSON");
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Suponiendo que `data` es un array de objetos con { pregunta, respuesta }
+        preguntas = data.map(item => item.pregunta);
+        respuestas = data.map(item => item.respuesta);
+    
+        console.log("Preguntas:", preguntas);
+        console.log("Respuestas:", respuestas);
+      })
+      .catch(error => {
+        console.error("Error:", error);
+      });
+
+    let indicePregunta = Math.floor(Math.random() * preguntas.length);;
     let escuchando = false;
 
     function agregarMensaje(texto, tipo = "bot") {
@@ -74,35 +96,71 @@
 
     function escuchar() {
       if (escuchando) return;
-      escuchando = true;
-      const recognition = new webkitSpeechRecognition();
-      recognition.lang = 'es-ES';
-      recognition.interimResults = false;
 
-      recognition.onresult = function(event) {
+      try {
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'es-ES';
+        recognition.interimResults = false;
+
+        escuchando = true;
+
+        recognition.onresult = function(event) {
+          escuchando = false;
+          const respuestaUsuario = event.results[0][0].transcript;
+          agregarMensaje(respuestaUsuario, "user");
+
+          // Enviar a la API de OpenRouter
+          evaluarRespuesta(preguntas[indicePregunta],respuestas[indicePregunta],respuestaUsuario)
+            .then(feedback => {
+              agregarMensaje(feedback, "bot");
+              hablar(feedback, siguientePregunta);
+            })
+            .catch(err => {
+              console.error(err);
+              agregarMensaje("❌ Error al evaluar la respuesta.", "bot");
+              hablar("Error al evaluar la respuesta.", siguientePregunta);
+            });
+        };
+
+        recognition.onerror = function(event) {
+          escuchando = false;
+          console.error("Error de micrófono:", event.error);
+          agregarMensaje("❌ No se pudo acceder al micrófono. Verifica los permisos.", "bot");
+          hablar("No se pudo acceder al micrófono. Por favor verifica los permisos.");
+        };
+
+        recognition.start();
+      } catch (e) {
         escuchando = false;
-        const texto = event.results[0][0].transcript;
-        agregarMensaje(texto, "user");
+        console.error(e);
+        agregarMensaje("⚠️ Tu navegador no soporta reconocimiento de voz o no tiene permisos.", "bot");
+      }
+    }
 
-        // Simulación de evaluación (respuesta falsa)
-        setTimeout(() => {
-          const fakeFeedback = "Correcto. ¡Bien hecho!";
-          agregarMensaje(fakeFeedback, "bot");
-          hablar(fakeFeedback, siguientePregunta);
-        }, 1000);
-      };
+    async function evaluarRespuesta(preguntacor, respuestacor, respuestaUsuario) {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + API_KEY,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "file:///C:/Users/sower/Desktop/index.html", // 🟡 Personaliza con tu dominio real
+          "X-Title": "anki-evaluator"
+        },
+        body: JSON.stringify({
+          model: "mistralai/mistral-7b-instruct:free",
+          messages: [
+            { role: "system", content: "Eres un profesor que evalúa respuestas breves de estudiantes en voz alta. Responde con una frase muy breve indicando si la respuesta es correcta, incorrecta, o si necesita mejorar." },
+            { role: "user", content: `Pregunta: ${preguntacor}\nRespuesta del alumno: ${respuestaUsuario}\nRespuesta que se pide: ${respuestacor}\n¿Está bien?, ademas me vas a hacer una preguta sobre el json de esta` }
+          ]
+        })
+      });
 
-      recognition.onerror = function() {
-        escuchando = false;
-        agregarMensaje("⚠️ No se entendió tu respuesta. Intenta de nuevo.", "bot");
-        hablar("No se entendió tu respuesta. Intenta de nuevo.", siguientePregunta);
-      };
-
-      recognition.start();
+      const data = await res.json();
+      return data.choices[0].message.content;
     }
 
     function siguientePregunta() {
-      indicePregunta++;
+      indicePregunta = Math.floor(Math.random() * preguntas.length);
       if (indicePregunta >= preguntas.length) {
         agregarMensaje("🎉 ¡Has terminado todas las preguntas!", "bot");
         hablar("Has terminado todas las preguntas. ¡Buen trabajo!");
@@ -114,7 +172,7 @@
     }
 
     function comenzarConversacion() {
-      indicePregunta = 0;
+      indicePregunta = Math.floor(Math.random() * preguntas.length);
       document.getElementById("chat").innerHTML = "";
       const primera = preguntas[indicePregunta];
       agregarMensaje(primera, "bot");
@@ -123,3 +181,5 @@
   </script>
 </body>
 </html>
+
+
