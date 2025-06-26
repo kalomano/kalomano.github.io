@@ -149,8 +149,8 @@
         body: JSON.stringify({
           model: "mistralai/mistral-7b-instruct:free",
           messages: [
-            { role: "system", content: "Eres un profesor que evalúa respuestas breves de estudiantes en voz alta. Responde con una frase muy breve indicando si la respuesta es correcta, incorrecta, o si necesita mejorar." },
-            { role: "user", content: `Pregunta: ${preguntacor}\nRespuesta del alumno: ${respuestaUsuario}\nRespuesta que se pide: ${respuestacor}\n¿Está bien?, ademas me vas a hacer una preguta sobre el json de esta` }
+            { role: "system", content: "Eres un profesor que evalúa respuestas breves de estudiantes en voz alta. Responde con una frase muy breve indicando si la respuesta es correcta, incorrecta, o si necesita mejorar y el que le ha podido faltar por decir en su caso." },
+            { role: "user", content: `Pregunta: ${preguntacor}\nRespuesta del alumno: ${respuestaUsuario}\nRespuesta que se pide: ${respuestacor}\n¿Está bien?` }
           ]
         })
       });
@@ -181,5 +181,3 @@
   </script>
 </body>
 </html>
-
-
