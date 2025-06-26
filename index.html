@@ -4,61 +4,122 @@
   <meta charset="UTF-8">
   <title>Estudiar</title>
   <style>
-    body { font-family: sans-serif; text-align: center; padding: 2rem; }
-    button { padding: 1rem; font-size: 1rem; margin-top: 1rem; }
-    #respuesta, #resultado { margin-top: 1.5rem; font-size: 1.2rem; }
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+      background-color: #f9f9f9;
+    }
+    button {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+    .chat {
+      margin-top: 2rem;
+      background: white;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+    }
+    .msg {
+      margin: 1rem 0;
+    }
+    .msg strong {
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+    .msg.bot {
+      text-align: left;
+    }
+    .msg.user {
+      text-align: right;
+    }
   </style>
 </head>
 <body>
   <h1>🧠 Estudiar</h1>
-  <div id="pregunta">Cargando pregunta...</div>
-  <button onclick="escuchar()">🎤 Responder</button>
-  <div id="respuesta"></div>
-  <div id="resultado"></div>
+  <button onclick="comenzarConversacion()">Comenzar</button>
+
+  <div class="chat" id="chat"></div>
 
   <script>
-    let preguntaActual = "";
+    const preguntas = [
+      "¿Qué es la fotosíntesis?",
+      "¿Quién escribió Don Quijote?",
+      "¿Cuál es la capital de Francia?",
+      "¿Qué es una variable en programación?",
+      "¿Cuántos planetas hay en el sistema solar?"
+    ];
 
-    async function cargarPregunta() {
-      const res = await fetch("https://TU_BACKEND.com/pregunta");
-      const data = await res.json();
-      preguntaActual = data.pregunta;
-      document.getElementById("pregunta").innerText = preguntaActual;
-      hablar(preguntaActual);
+    let indicePregunta = 0;
+    let escuchando = false;
+
+    function agregarMensaje(texto, tipo = "bot") {
+      const div = document.createElement("div");
+      div.className = `msg ${tipo}`;
+      div.innerHTML = `<strong>${tipo === "bot" ? "📚 Pregunta" : "🙋 Tú"}:</strong> ${texto}`;
+      document.getElementById("chat").appendChild(div);
+      document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+    }
+
+    function hablar(texto, callback) {
+      const synth = window.speechSynthesis;
+      const utter = new SpeechSynthesisUtterance(texto);
+      utter.lang = 'es-ES';
+      utter.onend = callback;
+      synth.speak(utter);
     }
 
     function escuchar() {
+      if (escuchando) return;
+      escuchando = true;
       const recognition = new webkitSpeechRecognition();
       recognition.lang = 'es-ES';
       recognition.interimResults = false;
 
-      recognition.onresult = async function(event) {
+      recognition.onresult = function(event) {
+        escuchando = false;
         const texto = event.results[0][0].transcript;
-        document.getElementById("respuesta").innerText = "Tú: " + texto;
-        const res = await fetch("https://TU_BACKEND.com/evaluar", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            pregunta: preguntaActual,
-            respuesta: texto
-          })
-        });
-        const data = await res.json();
-        document.getElementById("resultado").innerText = data.evaluacion;
-        hablar(data.evaluacion);
+        agregarMensaje(texto, "user");
+
+        // Simulación de evaluación (respuesta falsa)
+        setTimeout(() => {
+          const fakeFeedback = "Correcto. ¡Bien hecho!";
+          agregarMensaje(fakeFeedback, "bot");
+          hablar(fakeFeedback, siguientePregunta);
+        }, 1000);
+      };
+
+      recognition.onerror = function() {
+        escuchando = false;
+        agregarMensaje("⚠️ No se entendió tu respuesta. Intenta de nuevo.", "bot");
+        hablar("No se entendió tu respuesta. Intenta de nuevo.", siguientePregunta);
       };
 
       recognition.start();
     }
 
-    function hablar(texto) {
-      const synth = window.speechSynthesis;
-      const utter = new SpeechSynthesisUtterance(texto);
-      utter.lang = 'es-ES';
-      synth.speak(utter);
+    function siguientePregunta() {
+      indicePregunta++;
+      if (indicePregunta >= preguntas.length) {
+        agregarMensaje("🎉 ¡Has terminado todas las preguntas!", "bot");
+        hablar("Has terminado todas las preguntas. ¡Buen trabajo!");
+        return;
+      }
+      const pregunta = preguntas[indicePregunta];
+      agregarMensaje(pregunta, "bot");
+      hablar(pregunta, escuchar);
     }
 
-    cargarPregunta();
+    function comenzarConversacion() {
+      indicePregunta = 0;
+      document.getElementById("chat").innerHTML = "";
+      const primera = preguntas[indicePregunta];
+      agregarMensaje(primera, "bot");
+      hablar(primera, escuchar);
+    }
   </script>
 </body>
 </html>
