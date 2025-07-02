@@ -47,7 +47,7 @@
   let API_KEY = ""; // ⛔ Sustituye esto por tu clave real
 
   window.addEventListener("DOMContentLoaded", () => {
-    API_KEY = "sk-or-v1-127890d42975db6416829104e73bdc0e292b825954721381c4e5eec362ba" + prompt("Introduce tu API key de OpenRouter:");
+    API_KEY = "sk-or-v1-587c1ff4d7f2f0c5db688b147a037fc218a2bb0bbe0efe8f05308a41ce4e9" + prompt("Introduce tu API key de OpenRouter:");
     if (!API_KEY) {
       alert("⚠️ Necesitas introducir una API key para usar esta app.");
     }
@@ -141,7 +141,7 @@
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": "Bearer " + "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",
+          "Authorization": "Bearer " + API_KEY,
           "Content-Type": "application/json",
           "HTTP-Referer": "file:///C:/Users/sower/Desktop/index.html", // 🟡 Personaliza con tu dominio real
           "X-Title": "anki-evaluator"
